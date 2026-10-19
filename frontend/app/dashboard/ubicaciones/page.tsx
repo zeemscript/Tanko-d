@@ -1,16 +1,36 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { AlertCircle, Clock, Fuel, Loader2, MapPin, Search } from "lucide-react"
+import type { ReactNode } from "react"
+
+import dynamic from "next/dynamic"
+
+import {
+  AlertCircle,
+  Clock,
+  Fuel,
+  MapPin,
+  Search,
+  type LucideIcon,
+} from "lucide-react"
+import { Input } from "@/components/ui/input"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { StationMap, type StationMapLocation } from "@/components/station-map"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from "@/providers/auth-provider"
 import { toast } from "sonner"
+import { getMappableStations } from "@/lib/maps/stations"
+import { useTranslations } from "next-intl"
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:3001"
 
@@ -61,6 +81,8 @@ function toMapLocation(station: GasStation): StationMapLocation | null {
 }
 
 export default function LocationsPage() {
+  const t = useTranslations("ubicaciones")
+  const tCommon = useTranslations("common")
   const { role } = useAuth()
   const [stations, setStations] = useState<GasStation[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,7 +109,7 @@ export default function LocationsPage() {
         setStations(nextStations)
         setSelectedStationId(firstMappableStation?.id ?? nextStations[0]?.id ?? null)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error de conexion")
+        setError(err instanceof Error ? err.message : tCommon("connectionError"))
         setStations([])
         setSelectedStationId(null)
       } finally {
@@ -121,120 +143,100 @@ export default function LocationsPage() {
     setSelectedStationId(mapStations[0]?.id ?? filtered[0]?.id ?? null)
   }, [filtered, mapStations, selectedStationId])
 
-  if (loading) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Cargando ubicaciones...</p>
-        </div>
-      </div>
-      <h3 className="text-xl font-semibold text-foreground">No stations found</h3>
-      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        {searchQuery 
-          ? "We couldn't find any gas stations matching your search criteria. Try a different term."
-          : isJefe 
-            ? "Your fleet doesn't have any authorized gas stations yet. Start by adding your first one."
-            : "There are currently no authorized gas stations available for your route."}
-      </p>
-      {isJefe && !searchQuery && (
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button className="mt-6 gap-2" size="lg">
-              <Plus className="h-4 w-4" />
-              Register First Gas Station
-            </Button>
-          </SheetTrigger>
-          <StationForm />
-        </Sheet>
-      )}
-    </div>
-  )
-
   const StationForm = () => (
     <SheetContent className="sm:max-w-[500px]">
       <SheetHeader className="pb-6">
-        <SheetTitle className="text-2xl font-bold">Add New Gas Station</SheetTitle>
+        <SheetTitle className="text-2xl font-bold">{t("addStation")}</SheetTitle>
         <SheetDescription>
-          Register a new authorized fueling location for your fleet.
+          {t("addStationDesc")}
         </SheetDescription>
       </SheetHeader>
       <div className="space-y-6 py-4">
         {/* Mock form fields for now */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Station Name</label>
-          <Input placeholder="e.g. Pemex Santa Fe" />
+          <label className="text-sm font-medium">{t("stationName")}</label>
+          <Input placeholder={t("stationNamePlaceholder")} />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Full Address</label>
-          <Input placeholder="Avenida Siempre Viva 123..." />
+          <label className="text-sm font-medium">{t("fullAddress")}</label>
+          <Input placeholder={t("fullAddressPlaceholder")} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">City</label>
-            <Input placeholder="CDMX" />
+            <label className="text-sm font-medium">{t("city")}</label>
+            <Input placeholder={t("cityPlaceholder")} />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">State</label>
-            <Input placeholder="Mexico" />
+            <label className="text-sm font-medium">{t("state")}</label>
+            <Input placeholder={t("statePlaceholder")} />
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Operating Hours</label>
-          <Input placeholder="e.g. 24/7 or 06:00 - 22:00" />
+          <label className="text-sm font-medium">{t("hours")}</label>
+          <Input placeholder={t("hoursPlaceholder")} />
         </div>
-        <Button className="w-full mt-4" onClick={() => toast.success("Feature coming soon!")}>
-          Register Station
+        <Button className="w-full mt-4" onClick={() => toast.success(t("comingSoon"))}>
+          {t("registerStation")}
         </Button>
       </div>
     </SheetContent>
   )
 
+  if (error) {
+    return <ErrorState title="Error al cargar ubicaciones" message={error} />
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Ubicaciones</h1>
-        <p className="text-muted-foreground">Gasolineras autorizadas para la flota</p>
+      <PageHero
+        eyebrow="Station network"
+        title="Ubicaciones"
+        description="Gasolineras donde la flota ha cargado combustible y puntos de operación recientes."
+      />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard label="Estaciones" value={locations.length.toString()} detail="Puntos únicos" loading={loading} />
+        <MetricCard label="Ciudad" value="México" detail="Cobertura detectada" loading={loading} />
+        <MetricCard label="Servicios" value="Fuel" detail="Red de carga" loading={loading} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Mapa de gasolineras</CardTitle>
-            <CardDescription>
-              {mapStations.length} de {filtered.length} estacion{filtered.length !== 1 ? "es" : ""} con coordenadas validas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <StationMap
-              stations={mapStations}
-              selectedStationId={selectedStationId}
-              onSelectStation={setSelectedStationId}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Gasolineras</CardTitle>
-            <CardDescription>
-              {stations.length} estacion{stations.length !== 1 ? "es" : ""} autorizada{stations.length !== 1 ? "s" : ""}
-            </CardDescription>
-            <div className="relative mt-3">
+      <Card className="tanko-glass-subtle rounded-lg py-0">
+        <CardHeader className="p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-title text-white">Gasolineras</CardTitle>
+              <CardDescription>Estaciones donde se han registrado cargas de combustible</CardDescription>
+            </div>
+            <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre, direccion o ciudad..."
+                placeholder="Buscar estación..."
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                className="pl-10"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-glass pl-10"
               />
             </div>
           </CardHeader>
           <CardContent>
             {filtered.length === 0 ? (
-              <p className="py-8 text-center text-muted-foreground">
-                {searchQuery ? "Sin resultados para tu busqueda" : "No hay gasolineras autorizadas"}
-              </p>
+              <div className="space-y-4 py-8 text-center">
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? t("noSearchResults")
+                    : t("noAuthorized")}
+                </p>
+                {isJefe && !searchQuery && (
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button className="gap-2" size="lg">
+                        <Plus className="h-4 w-4" />
+                        {t("registerFirst")}
+                      </Button>
+                    </SheetTrigger>
+                    <StationForm />
+                  </Sheet>
+                )}
+              </div>
             ) : (
               <div className="max-h-[calc(100vh-320px)] min-h-[360px] space-y-3 overflow-y-auto pr-1">
                 {filtered.map((station) => {
@@ -255,49 +257,122 @@ export default function LocationsPage() {
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary/10">
                         <Fuel className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-semibold leading-tight text-foreground">{station.name}</h4>
-                        <p className="mt-1 text-sm text-muted-foreground">{station.address}</p>
-                        {(station.city || station.state) && (
-                          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3 shrink-0" />
-                            {[station.city, station.state].filter(Boolean).join(", ")}
-                          </p>
-                        )}
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {station.hours && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {station.hours}
-                            </span>
-                          )}
-                          {!mapLocation && (
-                            <span className="rounded-full bg-destructive/10 px-2 py-1 text-xs text-destructive">
-                              Sin coordenadas validas
-                            </span>
-                          )}
+                      <InfoLine icon={MapPin}>{location.address}</InfoLine>
+                      {location.city && (
+                        <InfoLine icon={Navigation}>{location.city}</InfoLine>
+                      )}
+                      {location.coordinates && (
+                        <p className="mt-2 font-mono text-caption text-muted-foreground">
+                          {location.coordinates}
+                        </p>
+                      )}
+                    </div>
+                    <div className="hidden shrink-0 flex-col items-end gap-2 sm:flex">
+                      {location.hours && (
+                        <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {location.hours}
                         </div>
-                        {station.services && station.services.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {station.services.map((service) => (
-                              <span
-                                key={service}
-                                className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
-                              >
-                                {service}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      )}
+                      {location.services && location.services.length > 0 && (
+                        <div className="flex flex-wrap justify-end gap-1">
+                          {location.services.map((service, idx) => (
+                            <span
+                              key={idx}
+                              className="rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-caption text-primary"
+                            >
+                              {service}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No hay ubicaciones registradas</EmptyState>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function PageHero({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return (
+    <section className="tanko-glass rounded-lg p-5 lg:p-6">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <MapPin className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-micro font-semibold uppercase tracking-[0.28em] text-primary">{eyebrow}</p>
+          <h1 className="mt-2 text-heading font-black text-white">{title}</h1>
+          <p className="mt-2 max-w-2xl text-body-sm text-muted-foreground">{description}</p>
+        </div>
       </div>
+    </section>
+  )
+}
+
+function MetricCard({ label, value, detail, loading }: { label: string; value: string; detail: string; loading: boolean }) {
+  return (
+    <Card className="tanko-glass-subtle rounded-lg py-0">
+      <CardContent className="p-5">
+        <p className="text-body-sm text-muted-foreground">{label}</p>
+        {loading ? <Skeleton className="mt-3 h-8 w-24 bg-white/10" /> : <p className="mt-3 text-3xl font-black text-white">{value}</p>}
+        <p className="mt-2 text-caption text-muted-foreground">{detail}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function InfoLine({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <p className="mt-2 flex items-center gap-2 text-body-sm text-muted-foreground">
+      <Icon className="h-4 w-4 text-primary" />
+      {children}
+    </p>
+  )
+}
+
+function LocationSkeleton() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="rounded-lg border border-glass-border bg-glass p-5">
+          <div className="flex gap-4">
+            <Skeleton className="h-12 w-12 bg-white/10" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-5 w-2/3 bg-white/10" />
+              <Skeleton className="h-4 w-full bg-white/10" />
+              <Skeleton className="h-4 w-32 bg-white/10" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ErrorState({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="flex h-[60vh] items-center justify-center">
+      <div className="tanko-glass flex max-w-md flex-col items-center gap-4 rounded-lg px-8 py-7 text-center">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="font-semibold text-destructive">{title}</p>
+        <p className="text-body-sm text-muted-foreground">{message}</p>
+      </div>
+    </div>
+  )
+}
+
+function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-dashed border-glass-border bg-glass p-8 text-center text-body-sm text-muted-foreground">
+      {children}
     </div>
   )
 }

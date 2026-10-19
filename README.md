@@ -14,6 +14,11 @@
 5. [Installation](#installation)
 6. [Environment Variables](#environment-variables)
 7. [Running the App](#running-the-app)
+8. [Design System](#design-system)
+9. [Usage Guide](#usage-guide)
+10. [Backend API Endpoints](#backend-api-endpoints)
+11. [Smart Contract](#smart-contract)
+12. [Current Status](#current-status)
 8. [Usage Guide](#usage-guide)
 9. [Backend API Endpoints](#backend-api-endpoints)
 10. [Smart Contract](#smart-contract)
@@ -212,11 +217,45 @@ Tanko/
 
 ---
 
+## Design System
+
+Tanko uses a dark operational control-plane design system defined in `frontend/app/globals.css`.
+
+### Foundations
+
+| Token group | Usage |
+|-------------|-------|
+| `--background`, `--foreground`, `--card` | Dark app shell, readable foreground text, dashboard surfaces |
+| `--primary` | Tanko cyan for primary actions, active states, data highlights |
+| `--accent` | Secondary purple accent for role/status differentiation |
+| `--success`, `--warning`, `--destructive` | Operational status states for approvals, pending work, and errors |
+| `--glass`, `--glass-strong`, `--glass-border` | Translucent dashboard panels and elevated content containers |
+| `--shadow-glass`, `--shadow-glow-blue`, `--shadow-glow-purple` | Depth and focus treatments for key shell elements |
+
+### Utilities
+
+| Utility | Purpose |
+|---------|---------|
+| `.tanko-glass` | Primary elevated glass panel with blur, border, and shadow |
+| `.tanko-glass-subtle` | Lighter glass panel for repeated cards and lists |
+| `.tanko-surface-grid` | Background grid texture used behind app shells |
+| `.tanko-text-gradient` | Cyan-to-purple text treatment for high-emphasis labels |
+| `.tanko-focus` | Consistent keyboard focus ring |
+
+### Page Patterns
+
+- Dashboard pages use a compact hero band with an icon, uppercase eyebrow, page title, and short context line.
+- Async content uses skeleton loaders inside the target section instead of replacing the full page with a spinner.
+- Manager operational pages keep their existing API contracts and business logic while presenting dense glass tables, cards, and searchable lists.
+- Driver pages emphasize wallet state, balances, request creation, and request status using the same token system.
+
+---
+
 ## Installation
 
 ### Prerequisites
 
-- Node.js ≥ 18
+- Node.js ≥ 20.9
 - npm ≥ 9
 - PostgreSQL (local or managed)
 - [Freighter wallet extension](https://freighter.app) installed and set to **Testnet**
@@ -477,6 +516,44 @@ A GitHub Actions workflow runs automatically on every **push to `main`** and eve
 - **Soroban**: Contract needs to be deployed and contract ID configured
 - **Freighter**: Must be set to **Testnet** in extension settings
 - **Testnet Funds**: Use [Stellar Laboratory](https://laboratory.stellar.org) to fund testnet accounts
+
+---
+
+## Data Export
+
+Fleet managers (Jefes de Flota) can download a snapshot of all operational data as a ZIP of structured CSV files, ready to import into Microsoft Access for reporting and auditing.
+
+### Endpoint
+
+```
+GET /api/v1/exports/access
+Authorization: Bearer <JEFE JWT>
+```
+
+Optional query parameters:
+
+| Parameter | Format | Description |
+|-----------|--------|-------------|
+| `from` | `YYYY-MM-DD` | Start date (inclusive) |
+| `to` | `YYYY-MM-DD` | End date (inclusive) |
+
+### Response
+
+Returns `tanko-export-<timestamp>.zip` containing:
+
+- `users.csv` — Drivers and fleet managers
+- `units.csv` — Fleet vehicles
+- `fuel_logs.csv` — Fuel load records
+- `fund_requests.csv` — Fund requests and statuses
+- `escrow_config.csv` — Escrow configuration
+
+### Access Import
+
+For step-by-step instructions on importing the CSVs into Microsoft Access, see [`backend/docs/access-import-guide.md`](backend/docs/access-import-guide.md).
+
+### Linux / Docker note
+
+The export is always a `.zip` of CSV files (no Windows Access Database Engine required). The system `zip` binary must be present in the container/host — it is available by default on Debian/Ubuntu-based images.
 
 ---
 

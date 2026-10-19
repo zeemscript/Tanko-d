@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.7.0
- * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
+ * Prisma Client JS version: 7.8.0
+ * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.7.0",
-  engine: "75cbdc1eb7150937890ad5465d861175c6624711"
+  client: "7.8.0",
+  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
 }
 
 /**
@@ -391,7 +391,8 @@ export const ModelName = {
   FundRequest: 'FundRequest',
   GasStation: 'GasStation',
   EscrowConfig: 'EscrowConfig',
-  EscrowMilestone: 'EscrowMilestone'
+  EscrowMilestone: 'EscrowMilestone',
+  ProcessedEvent: 'ProcessedEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1003,6 +1004,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ProcessedEvent: {
+      payload: Prisma.$ProcessedEventPayload<ExtArgs>
+      fields: Prisma.ProcessedEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProcessedEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProcessedEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        findFirst: {
+          args: Prisma.ProcessedEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProcessedEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        findMany: {
+          args: Prisma.ProcessedEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>[]
+        }
+        create: {
+          args: Prisma.ProcessedEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        createMany: {
+          args: Prisma.ProcessedEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProcessedEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>[]
+        }
+        delete: {
+          args: Prisma.ProcessedEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        update: {
+          args: Prisma.ProcessedEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProcessedEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProcessedEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProcessedEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProcessedEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedEventPayload>
+        }
+        aggregate: {
+          args: Prisma.ProcessedEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProcessedEvent>
+        }
+        groupBy: {
+          args: Prisma.ProcessedEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProcessedEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedEventCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1183,6 +1258,17 @@ export const EscrowMilestoneScalarFieldEnum = {
 export type EscrowMilestoneScalarFieldEnum = (typeof EscrowMilestoneScalarFieldEnum)[keyof typeof EscrowMilestoneScalarFieldEnum]
 
 
+export const ProcessedEventScalarFieldEnum = {
+  id: 'id',
+  eventId: 'eventId',
+  ledgerSequence: 'ledgerSequence',
+  contractId: 'contractId',
+  processedAt: 'processedAt'
+} as const
+
+export type ProcessedEventScalarFieldEnum = (typeof ProcessedEventScalarFieldEnum)[keyof typeof ProcessedEventScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1361,6 +1447,21 @@ export type PrismaClientOptions = ({
    * ```
    */
   comments?: runtime.SqlCommenterPlugin[]
+  /**
+   * Optional maximum size for the query plan cache. If not provided, a default size will be used.
+   * A value of `0` can be used to disable the cache entirely. A higher cache size can improve
+   * performance for applications that execute a large number of unique queries, while a smaller
+   * cache size can reduce memory usage.
+   * 
+   * @example
+   * ```
+   * const prisma = new PrismaClient({
+   *   adapter,
+   *   queryPlanCacheMaxSize: 100,
+   * })
+   * ```
+   */
+  queryPlanCacheMaxSize?: number
 }
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
@@ -1371,6 +1472,7 @@ export type GlobalOmitConfig = {
   gasStation?: Prisma.GasStationOmit
   escrowConfig?: Prisma.EscrowConfigOmit
   escrowMilestone?: Prisma.EscrowMilestoneOmit
+  processedEvent?: Prisma.ProcessedEventOmit
 }
 
 /* Types for Logging */
